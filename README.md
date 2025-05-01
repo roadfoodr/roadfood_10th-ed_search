@@ -28,18 +28,54 @@ Live demo: https://roadfoodr--roadfood-search-app-run.modal.run/
 - The Chroma database contains vector embeddings of restaurant descriptions for RAG purposes
 - The app is configured to work both locally and in the Modal cloud environment
 
-## Roadmap
+## Application Flow Diagram
 
 ```mermaid
 graph TD
-  A[User Query] --> B[LLM Guardrail Check]
-  B --> C[Cache Lookup]
-  C -->|Hit| Z[Return Cached Result]
-  C -->|Miss| D[LLM Query Analysis]
-  D --> E[Tool Calls<br>for specialized search]
-  E --> F[Pre-filter corpus<br>~1,000 records]
-  F --> G[Semantic Search<br>on Filtered Subset]
-  G --> H[Re-rank by<br>Quality Signals]
-  H --> I[RAG + LLM for<br>Narrative Generation]
-  I --> J[Final Response to User]
-```
+    A[User Input via Streamlit UI] --> B[LLM Scope Guardrail];
+    B --> C[LangGraph Filter Pipeline];
+    C --> D[Tool Calling Node];
+    D --> E[LLM Selects Filter Tools];
+    E --> F[State, Region Extraction];
+    F --> G[Format Filter Node];
+    G --> H[DB Query using ChromaDB];
+    H --> I[Similarity Search w/ Filter];
+    I --> J[Result Handling];
+    J -- Summarization ON --> K[Generate Summary via LLM];
+    J -- Summarization OFF --> L[Format Raw Results];
+    K --> M[Post-Process Summary];
+    M --> N[Display Results in Streamlit];
+    L --> N;
+    N --> O[Optional: User Feedback];
+    N --> P[Optional: Download Results];
+
+    subgraph "Filter Tools Module - filter_tools.py"
+        F
+    end
+
+    subgraph "Main Application - roadfood_search_app.py"
+        A
+        B
+        C
+        D
+        E
+        G
+        subgraph "ChromaDB Filter + Search"
+            H
+            I
+        end
+        J
+        K
+        L
+        M
+        N
+        O
+        P
+    end
+
+
+classDef llm fill:#ffe0b3,stroke:#cc7a00,stroke-width:2px,color:#000;
+class B,E,J llm;
+
+
+``` 
